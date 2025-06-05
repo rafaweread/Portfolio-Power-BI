@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Cards com Destaque Único (Radio Buttons)</title>
+  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,200,300,600,700,900" rel="stylesheet">
+  <style>
+    /* ---------- RESET BÁSICO E BODY ---------- */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      background: none;
+      color: none;
+      font-family: 'Source Sans Pro', sans-serif;
+      text-rendering: optimizeLegibility;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 40px 0;
+    }
+
+    /* ---------- CONTAINER DE CARDS ---------- */
+    .cards {
+      width: 960px;
+      max-width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    /* ---------- INPUT RADIO ESCONDIDO ---------- */
+    .cards input[type="radio"] {
+      display: none;
+    }
+
+    /* ---------- ESTILO PADRÃO DO CARD (LABEL) ---------- */
+    .card {
+      background: #ffffff;
+      width: 300px;
+      position: relative;
+      text-align: left;
+      transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, opacity 0.3s ease-in-out;
+      cursor: pointer;
+      opacity: 1;
+      transform: scale(1);
+      z-index: 1;
+      border-radius: 4px;
+      overflow: hidden; /* importante para cortar o conteúdo que expande */
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .card img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    /* ---------- TÍTULO E ÍCONE ---------- */
+    .card .card-title {
+      background: #ffffff;
+      padding: 6px 15px 10px;
+      position: relative;
+      z-index: 1; /* Mantido para contexto de empilhamento interno */
+    }
+    .card .card-title .toggle-icon {
+      position: absolute;
+      right: 15px;
+      top: 10px;
+      width: 32px; height: 32px;
+      border-radius: 32px;
+      background: #0096a0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+      line-height: 1;
+      transition: background 0.2s, transform 0.3s;
+    }
+    .card .card-title .toggle-icon:hover {
+      background: #00a1ac;
+    }
+    .card .card-title h2 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      margin: 0;
+      padding-right: 48px; /* espaço para o ícone */
+    }
+    .card .card-title h2 small {
+      display: block;
+      font-size: 18px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+    }
+
+    /* ---------- CONTEÚDO “EXTRA” ESCONDIDO ---------- */
+    .card .extra-content {
+      max-height: 0;               /* começa “fechado” */
+      overflow: hidden;
+      background: #f7f7f7;
+      transition: max-height 0.4s ease-in-out;
+      padding: 0 15px;             /* padding horizontal sempre, vertical só quando aberto */
+    }
+    .card .extra-content .card-description {
+      padding: 15px 0 0;           /* texto começa um pouco abaixo */
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .card .extra-content .flap2 {
+      margin-top: 12px;
+      padding-bottom: 15px;        /* dá espaço abaixo do botão */
+    }
+    .card .extra-content .flap2 .card-actions {
+      text-align: center;
+      margin-top: 8px;
+    }
+    .card .extra-content .flap2 .card-actions a.btn {
+      background: #0096a0;
+      border-radius: 4px;
+      color: #fff;
+      display: inline-block;
+      padding: 6px 30px 8px;
+      text-decoration: none;
+      transition: all 0.1s ease-out, box-shadow 0.3s ease;
+    }
+    .card .extra-content .flap2 .card-actions a.btn:hover {
+      background: #00a1ac;
+      box-shadow: 0 8px 2px rgba(0,0,0,0.075);
+      transform: translateY(-2px);
+    }
+    .card .extra-content .flap2 .card-actions a.btn:active {
+      background: #008a93;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.25);
+      transform: translateY(1px);
+    }
+
+    /* ---------- ESTADOS DO CARD (RADIO CHECKED) ---------- */
+
+    /* 1. Quando um radio está marcado, DIMINUI/ESFUMAÇA TODOS os cards */
+    .cards:has(input[type="radio"]:checked) > label.card {
+      opacity: 0.6;
+      transform: scale(0.88);
+      z-index: 1; /* Garante que fiquem atrás do selecionado */
+    }
+
+    /* 2. Expande o conteúdo extra do card SELECIONADO */
+    .cards input[type="radio"]:checked + label.card .extra-content {
+      max-height: 500px; /* valor suficientemente grande para acomodar o texto */
+    }
+
+    /* 3. DESTACA APENAS o card SELECIONADO (sobrescreve o passo 1) */
+    .cards input[type="radio"]:checked + label.card {
+      opacity: 1; /* Restaura opacidade */
+      transform: scale(1.02); /* Aplica zoom */
+      box-shadow: 0 8px 16px rgba(0,0,0,0.15); /* Sombra de destaque */
+      z-index: 10; /* Traz para a frente */
+    }
+
+    /* 4. Gira o ícone do card SELECIONADO */
+    .cards input[type="radio"]:checked + label.card .toggle-icon {
+      transform: rotate(45deg);
+      background: #ff6666;
+    }
+
+    /* ---------- SCROLL AUTOMÁTICO (SEM JS) VIA :target ---------- */
+    /* Se o #id-extra estiver no hash, rola automaticamente até ele */
+    .card:target {
+      scroll-margin-top: 20px;   /* adiciona folga no topo */
+    }
+  </style>
+</head>
+<body>
+  <div class="cards">
+
+    <!-- ========================================== -->
+    <!--                 CARD 1                     -->
+    <!-- ========================================== -->
+    <input type="radio" name="card-selector" id="card1" />
+    <label for="card1" class="card" id="card1-container">
+      <div class="card__image-holder">
+        <img class="card__image" src="https://source.unsplash.com/300x225/?wave" alt="wave" />
+      </div>
+      <div class="card-title">
+        <div class="toggle-icon">+</div>
+        <h2>
+          Card 1
+          <small>Imagem: unsplash.com</small>
+        </h2>
+      </div>
+
+      <div class="extra-content" id="extra1">
+        <div class="card-description">
+          Este card mostra como abrir/fechar sem JavaScript, usando apenas CSS e um radio button escondido.
+          Agora, apenas um card pode ser destacado por vez. Os outros ficam menores e com opacidade reduzida.
+        </div>
+        <div class="flap2">
+          <div class="card-actions">
+            <a href="#extra1" class="btn">Leia mais</a>
+          </div>
+        </div>
+      </div>
+    </label>
+
+    <!-- ========================================== -->
+    <!--                 CARD 2                     -->
+    <!-- ========================================== -->
+    <input type="radio" name="card-selector" id="card2" />
+    <label for="card2" class="card" id="card2-container">
+      <div class="card__image-holder">
+        <img class="card__image" src="https://source.unsplash.com/300x225/?beach" alt="beach" />
+      </div>
+      <div class="card-title">
+        <div class="toggle-icon">+</div>
+        <h2>
+          Card 2
+          <small>Imagem: unsplash.com</small>
+        </h2>
+      </div>
+
+      <div class="extra-content" id="extra2">
+        <div class="card-description">
+          Conteúdo extra do Card 2. Ao selecionar este, os outros cards serão minimizados.
+          A seleção é mútua exclusiva devido ao uso de radio buttons.
+        </div>
+        <div class="flap2">
+          <div class="card-actions">
+            <a href="#extra2" class="btn">Leia mais</a>
+          </div>
+        </div>
+      </div>
+    </label>
+
+    <!-- ========================================== -->
+    <!--                 CARD 3                     -->
+    <!-- ========================================== -->
+    <input type="radio" name="card-selector" id="card3" />
+    <label for="card3" class="card" id="card3-container">
+      <div class="card__image-holder">
+        <img class="card__image" src="https://source.unsplash.com/300x225/?mountain" alt="mountain" />
+      </div>
+      <div class="card-title">
+        <div class="toggle-icon">+</div>
+        <h2>
+          Card 3
+          <small>Imagem: unsplash.com</small>
+        </h2>
+      </div>
+
+      <div class="extra-content" id="extra3">
+        <div class="card-description">
+          Conteúdo extra do Card 3. Clicar aqui destaca este card e retorna os outros ao estado minimizado.
+          O efeito de profundidade e expansão é aplicado apenas ao card ativo.
+        </div>
+        <div class="flap2">
+          <div class="card-actions">
+            <a href="#extra3" class="btn">Leia mais</a>
+          </div>
+        </div>
+      </div>
+    </label>
+
+    <!-- Repita esse padrão para quantos cards precisar (trocar id, for, name="card-selector") -->
+
+  </div>
+</body>
+</html>
